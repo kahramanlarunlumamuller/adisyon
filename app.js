@@ -139,6 +139,11 @@ $('#forgot').addEventListener('click', async () => {
 
 /* ---------------- Ekranlar ve roller ---------------- */
 function screen(name, msg) {
+  if (!$('#loading') || !$('#noaccess')) {
+    // index.html eski sürüm kalmış: boş ekran yerine açıklama göster
+    document.body.innerHTML = '<div style="padding:24px;font-family:sans-serif;line-height:1.6"><h2>Güncelleme yarım kalmış</h2><p><b>index.html</b> dosyası eski sürüm. GitHub\'a son <b>index.html</b> dosyasını yükleyin, sonra sayfayı yenileyin.</p></div>';
+    throw new Error('index.html eski sürüm');
+  }
   ['login', 'loading', 'noaccess', 'app'].forEach((id) => $('#' + id).classList.toggle('hidden', id !== name));
   if (name === 'noaccess') $('#noaccess-msg').textContent = msg || '';
 }
@@ -186,7 +191,7 @@ function applyRole(data) {
   const changed = role !== S.role;
   S.role = role;
   document.body.classList.toggle('staff', role === 'staff');
-  $('#logout-top').classList.toggle('hidden', role === 'admin');
+  $('#logout-top')?.classList.toggle('hidden', role === 'admin');
   if (role === 'admin' && !S.usersUnsub) {
     S.usersUnsub = onSnapshot(collection(db, 'users'), (snap) => {
       S.users = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.id.localeCompare(b.id));
@@ -214,8 +219,8 @@ function stopAll() {
   if (S.meUnsub) { S.meUnsub(); S.meUnsub = null; }
 }
 
-$('#noaccess-logout').addEventListener('click', () => signOut(auth));
-$('#logout-top').addEventListener('click', () => { if (confirm('Çıkış yapılsın mı?')) signOut(auth); });
+$('#noaccess-logout')?.addEventListener('click', () => signOut(auth));
+$('#logout-top')?.addEventListener('click', () => { if (confirm('Çıkış yapılsın mı?')) signOut(auth); });
 
 /* ---------------- Veri dinleme ---------------- */
 function start() {
