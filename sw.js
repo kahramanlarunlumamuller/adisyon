@@ -1,5 +1,5 @@
 // Uygulamayı güncellediğinizde bu numarayı artırın (v1 -> v2) ki telefonlar yeni sürümü alsın.
-const CACHE = 'adisyon-v5';
+const CACHE = 'adisyon-v6';
 
 const ASSETS = [
   './',
