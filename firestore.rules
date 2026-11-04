@@ -1,23 +1,57 @@
 rules_version = '2';
 
-// Sadece aşağıdaki listede e-postası olan kullanıcılar verileri okuyup yazabilir.
-// Yeni bir kullanıcı (ör. çalışan) eklemek için:
-//   1) Firebase Console > Authentication'da kullanıcıyı oluşturun
-//   2) E-postasını aşağıdaki listeye ekleyip "Yayınla"ya basın
-// E-postaları küçük harfle yazın.
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function yetkili() {
-      return request.auth != null
-        && request.auth.token.email in [
-          'ORNEK@gmail.com'
-        ];
+    function anaYoneticiler() {
+      return [
+        'ADMIN@gmail.com'
+      ];
     }
 
-    match /{document=**} {
-      allow read, write: if yetkili();
+    function girisli() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+    function eposta() {
+      return request.auth.token.email.lower();
+    }
+    function kayitYolu() {
+      return /databases/$(database)/documents/users/$(eposta());
+    }
+    function anaYonetici() {
+      return girisli() && eposta() in anaYoneticiler();
+    }
+    function aktifKayit() {
+      return girisli() && exists(kayitYolu()) && get(kayitYolu()).data.active == true;
+    }
+    function yonetici() {
+      return anaYonetici() || (aktifKayit() && get(kayitYolu()).data.role == 'admin');
+    }
+    function calisan() {
+      return yonetici() || aktifKayit();
+    }
+
+    match /users/{userId} {
+      allow read: if yonetici() || (girisli() && eposta() == userId);
+      allow write: if yonetici();
+    }
+
+    match /receipts/{id} {
+      allow create: if calisan();
+      allow read, update, delete: if yonetici();
+    }
+
+    match /products/{id} {
+      allow read: if calisan();
+      allow write: if yonetici();
+    }
+    match /hotels/{id} {
+      allow read: if calisan();
+      allow write: if yonetici();
+    }
+    match /settings/{id} {
+      allow read: if calisan();
+      allow write: if yonetici();
     }
   }
 }
