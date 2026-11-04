@@ -1,5 +1,5 @@
 // Uygulamayı güncellediğinizde bu numarayı artırın (v1 -> v2) ki telefonlar yeni sürümü alsın.
-const CACHE = 'adisyon-v6';
+const CACHE = 'adisyon-v7';
 
 const ASSETS = [
   './',
@@ -14,7 +14,12 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: 'reload' -> tarayıcının eski kopyasını değil, sunucudaki güncel dosyayı al
+  e.waitUntil(
+    caches.open(CACHE)
+      .then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {
@@ -30,10 +35,10 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Kendi dosyalarımız: önce internetten al (güncel kalsın), yoksa önbellekten aç
+  // Kendi dosyalarımız: her açılışta sunucudan güncel mi diye sor (no-cache), internet yoksa önbellekten aç
   if (url.origin === self.location.origin) {
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-cache' })
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy));
