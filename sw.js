@@ -1,5 +1,5 @@
 // Uygulamayı güncellediğinizde bu numarayı artırın (v1 -> v2) ki telefonlar yeni sürümü alsın. dvlfls
-const CACHE = "adisyon-v1"
+const CACHE = "adisyon-v2"
 
 const ASSETS = [
   "./",
