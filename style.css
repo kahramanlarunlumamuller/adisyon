@@ -1,0 +1,156 @@
+:root {
+  --bg: #faf7f2;
+  --card: #ffffff;
+  --text: #1f1a14;
+  --muted: #7a6f63;
+  --line: #e8e1d6;
+  --accent: #9a3412;
+  --accent-bg: #fdf0e6;
+  --danger: #b42318;
+  --ok: #067647;
+  --radius: 12px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17140f;
+    --card: #221e18;
+    --text: #f3ede4;
+    --muted: #a99d8f;
+    --line: #3a332a;
+    --accent: #f08a4b;
+    --accent-bg: #3a2416;
+    --danger: #f97066;
+    --ok: #47cd89;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 16px; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.err { color: var(--danger); font-size: 14px; min-height: 1em; margin: 4px 0; }
+h3 { margin: 0 0 10px; font-size: 16px; }
+
+input, select, button { font: inherit; color: inherit; }
+input, select {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--card); min-height: 44px;
+}
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+label > input, label > select { margin-top: 4px; color: var(--text); }
+
+button {
+  border: 1px solid var(--line); background: var(--card); border-radius: 10px;
+  padding: 10px 14px; min-height: 44px; cursor: pointer;
+}
+button:active { transform: scale(0.98); }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); width: 100%; font-weight: 600; }
+button.danger { color: var(--danger); }
+button.link { border: none; background: none; color: var(--accent); width: 100%; }
+button.small { min-height: 36px; padding: 6px 10px; font-size: 14px; }
+
+/* Giriş */
+.login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.login-card { width: 100%; max-width: 360px; background: var(--card); border: 1px solid var(--line);
+  border-radius: 16px; padding: 24px; text-align: center; }
+.login-card label { text-align: left; }
+.login-card h1 { margin: 8px 0 4px; font-size: 22px; }
+.login-logo { width: 72px; height: 72px; border-radius: 16px; }
+
+/* Üst bar */
+.top { position: sticky; top: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px; background: var(--bg);
+  border-bottom: 1px solid var(--line); font-weight: 600; font-size: 18px; }
+.net { font-size: 12px; font-weight: 500; background: var(--accent-bg); color: var(--accent);
+  padding: 4px 10px; border-radius: 99px; }
+
+main { padding: 12px 12px calc(84px + var(--safe-b)); max-width: 640px; margin: 0 auto; }
+
+/* Alt menü */
+.bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--card); border-top: 1px solid var(--line); padding-bottom: var(--safe-b); }
+.bottom button { border: none; border-radius: 0; background: none; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; font-size: 12px; color: var(--muted); padding: 8px 0; min-height: 60px; }
+.bottom button .ic { font-size: 20px; line-height: 1; }
+.bottom button.active { color: var(--accent); font-weight: 600; }
+
+/* Kartlar */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row2 label { margin-bottom: 0; }
+.banner { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--accent-bg);
+  color: var(--accent); padding: 8px 12px; border-radius: var(--radius); margin-bottom: 12px; font-weight: 600; }
+.empty { text-align: center; padding: 32px 16px; color: var(--muted); }
+.empty button { margin-top: 12px; }
+
+/* Ürün satırları (yeni fiş) */
+.items { padding: 4px 14px; }
+.item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: none; }
+.item .name { font-size: 16px; }
+.item.has .name { font-weight: 600; }
+.stepper { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.stepper button { width: 44px; padding: 0; font-size: 22px; font-weight: 600; }
+.stepper input { width: 64px; text-align: center; font-size: 18px; font-weight: 600; padding: 8px 4px; }
+.total-line { text-align: right; color: var(--muted); margin: 0 4px 12px; }
+.total-line b { color: var(--text); }
+
+/* Filtre */
+.filters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+
+/* Fiş listesi */
+.rec { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; }
+.rec-head { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+.rec-hotel { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.rec-items { font-size: 14px; margin: 8px 0; line-height: 1.5; }
+.rec-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.pending { font-size: 11px; font-weight: 500; color: var(--accent); background: var(--accent-bg); padding: 2px 8px; border-radius: 99px; }
+
+/* Özet */
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.metric { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; }
+.metric .l { font-size: 12px; color: var(--muted); }
+.metric .v { font-size: 18px; font-weight: 700; margin-top: 2px; word-break: break-word; }
+table.sum { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.sum th, table.sum td { padding: 8px 4px; border-bottom: 1px solid var(--line); text-align: right; }
+table.sum th:first-child, table.sum td:first-child { text-align: left; }
+table.sum th { font-size: 12px; color: var(--muted); font-weight: 500; }
+table.sum tfoot td { font-weight: 700; border-bottom: none; }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+
+/* Ayarlar */
+.srow { display: grid; grid-template-columns: 1fr 90px; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.srow:last-of-type { border-bottom: none; }
+.srow .acts { grid-column: 1 / -1; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.srow.inactive input[type=text] { opacity: 0.55; }
+.chk { display: inline-flex; align-items: center; gap: 6px; margin: 0 auto 0 0; color: var(--text); font-size: 14px; }
+.chk input { width: 20px; height: 20px; min-height: 0; margin: 0; }
+.addrow { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-top: 10px; }
+.hprices { grid-column: 1 / -1; background: var(--bg); border-radius: 10px; padding: 10px; }
+.hprice { display: grid; grid-template-columns: 1fr 110px; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 14px; }
+
+/* Bildirim */
+.toast { position: fixed; left: 50%; bottom: calc(80px + var(--safe-b)); transform: translateX(-50%) translateY(20px);
+  background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px;
+  opacity: 0; pointer-events: none; transition: all .2s; z-index: 20; max-width: 90vw; text-align: center; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { background: var(--danger); color: #fff; }
+
+/* Yazdırma (PDF) */
+#print-area { display: none; }
+@media print {
+  body > *:not(#print-area) { display: none !important; }
+  #print-area { display: block; color: #000; font-family: Arial, sans-serif; font-size: 12pt; }
+  #print-area h1 { font-size: 18pt; margin: 0 0 4pt; }
+  #print-area h2 { font-size: 13pt; margin: 18pt 0 6pt; }
+  #print-area .meta { margin: 0 0 12pt; color: #333; }
+  #print-area table { width: 100%; border-collapse: collapse; }
+  #print-area th, #print-area td { border: 1px solid #999; padding: 4pt 6pt; text-align: right; }
+  #print-area th:first-child, #print-area td:first-child { text-align: left; }
+  #print-area tfoot td { font-weight: bold; }
+  @page { margin: 14mm; }
+}

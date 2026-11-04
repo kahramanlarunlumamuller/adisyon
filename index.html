@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Adisyon</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#9a3412">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Adisyon">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- GİRİŞ -->
+  <div id="login" class="login hidden">
+    <form id="login-form" class="login-card" autocomplete="on">
+      <img src="icons/icon-192.png" alt="" class="login-logo">
+      <h1>Adisyon</h1>
+      <p class="muted">Devam etmek için giriş yapın</p>
+      <label>E-posta<input id="l-email" type="email" autocomplete="username" required></label>
+      <label>Şifre<input id="l-pass" type="password" autocomplete="current-password" required></label>
+      <p id="login-err" class="err"></p>
+      <button type="submit" class="primary">Giriş yap</button>
+      <button type="button" id="forgot" class="link">Şifremi unuttum</button>
+    </form>
+  </div>
+
+  <!-- UYGULAMA -->
+  <div id="app" class="hidden">
+    <header class="top">
+      <span id="title">Yeni fiş</span>
+      <span id="net" class="net hidden">Çevrimdışı</span>
+    </header>
+
+    <main>
+      <section id="tab-new" class="tab"></section>
+      <section id="tab-list" class="tab hidden"></section>
+      <section id="tab-summary" class="tab hidden"></section>
+      <section id="tab-settings" class="tab hidden"></section>
+    </main>
+
+    <nav class="bottom">
+      <button data-tab="new" class="active"><span class="ic">＋</span>Yeni fiş</button>
+      <button data-tab="list"><span class="ic">☰</span>Fişler</button>
+      <button data-tab="summary"><span class="ic">Σ</span>Özet</button>
+      <button data-tab="settings"><span class="ic">⚙</span>Ayarlar</button>
+    </nav>
+  </div>
+
+  <div id="print-area"></div>
+  <div id="toast" class="toast"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

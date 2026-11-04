@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// Sadece aşağıdaki listede e-postası olan kullanıcılar verileri okuyup yazabilir.
+// Yeni bir kullanıcı (ör. çalışan) eklemek için:
+//   1) Firebase Console > Authentication'da kullanıcıyı oluşturun
+//   2) E-postasını aşağıdaki listeye ekleyip "Yayınla"ya basın
+// E-postaları küçük harfle yazın.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function yetkili() {
+      return request.auth != null
+        && request.auth.token.email in [
+          'ORNEK@gmail.com'
+        ];
+    }
+
+    match /{document=**} {
+      allow read, write: if yetkili();
+    }
+  }
+}
