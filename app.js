@@ -856,5 +856,28 @@ function seedProducts() {
 
 /* ---------------- Çevrimdışı çalışma ---------------- */
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('SW kaydı başarısız', err));
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker
+    .register('./sw.js', { updateViaCache: 'none' })
+    .then((reg) => {
+      // Telefonda uygulama arka plandan açıldığında da yeni sürüm var mı diye bak
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reg.update().catch(() => {});
+      });
+    })
+    .catch((err) => console.warn('SW kaydı başarısız', err));
+
+  // Yeni sürüm devreye girince sayfayı yenile (yarım kalmış fiş varsa bozma, sadece haber ver)
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return;
+    const typing = Object.keys(S.qty).length > 0 || S.editingId
+      || ['INPUT', 'SELECT'].includes(document.activeElement?.tagName);
+    if (typing) {
+      toast('Uygulamanın yeni sürümü hazır. İşiniz bitince sayfayı yenileyin.');
+    } else {
+      reloading = true;
+      location.reload();
+    }
+  });
 }
