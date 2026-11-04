@@ -30,11 +30,32 @@
     </form>
   </div>
 
+  <!-- YÜKLENİYOR -->
+  <div id="loading" class="login">
+    <div class="login-card">
+      <img src="icons/icon-192.png" alt="" class="login-logo">
+      <p class="muted">Yükleniyor…</p>
+    </div>
+  </div>
+
+  <!-- YETKİ YOK -->
+  <div id="noaccess" class="login hidden">
+    <div class="login-card">
+      <img src="icons/icon-192.png" alt="" class="login-logo">
+      <h1>Erişim yok</h1>
+      <p id="noaccess-msg" class="muted"></p>
+      <button type="button" id="noaccess-logout" class="primary">Çıkış yap</button>
+    </div>
+  </div>
+
   <!-- UYGULAMA -->
   <div id="app" class="hidden">
     <header class="top">
       <span id="title">Yeni fiş</span>
-      <span id="net" class="net hidden">Çevrimdışı</span>
+      <span class="top-right">
+        <span id="net" class="net hidden">Çevrimdışı</span>
+        <button type="button" id="logout-top" class="small hidden">Çıkış</button>
+      </span>
     </header>
 
     <main>
