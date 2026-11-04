@@ -4,18 +4,18 @@ Toplam süre: yaklaşık 30–45 dakika. Bilgisayara program kurmanız gerekmez,
 
 ## Dosyalar
 
-| Dosya                               | Ne işe yarar                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------------ |
-| `index.html`, `style.css`, `app.js` | Uygulamanın kendisi                                                            |
-| `firebase-config.js`                | Firebase bağlantı bilgileri (Adım 5'te dolduracaksınız)                        |
-| `manifest.json`, `sw.js`, `icons/`  | Telefonda uygulama gibi açılması ve internetsiz çalışması için                 |
-| `firestore.rules`                   | Güvenlik kuralları (Firebase'e yapıştırılacak, GitHub'a yüklenmesi şart değil) |
+| Dosya | Ne işe yarar |
+|---|---|
+| `index.html`, `style.css`, `app.js` | Uygulamanın kendisi |
+| `firebase-config.js` | Firebase bağlantı bilgileri (Adım 5'te dolduracaksınız) |
+| `manifest.json`, `sw.js`, `icons/` | Telefonda uygulama gibi açılması ve internetsiz çalışması için |
+| `firestore.rules` | Güvenlik kuralları (Firebase'e yapıştırılacak, GitHub'a yüklenmesi şart değil) |
 
 ---
 
 ## Adım 1 — Google hesabı
 
-Bu iş için yeni bir Gmail hesabı açın (ör. ``). Firebase ve GitHub'ı bu hesapla açacaksınız. Müşteriye teslim ederken hesabın şifresini de verebilir ya da kendinizde tutabilirsiniz.
+Bu iş için yeni bir Gmail hesabı açın (ör. `kahramanlar.adisyon@gmail.com`). Firebase ve GitHub'ı bu hesapla açacaksınız. Müşteriye teslim ederken hesabın şifresini de verebilir ya da kendinizde tutabilirsiniz.
 
 ## Adım 2 — Firebase projesi
 
@@ -100,21 +100,28 @@ Ana ekranda simit simgeli "Adisyon" uygulaması çıkar. İnternet yokken de fi�
 2. `sw.js` dosyasının ilk satırındaki sürüm numarasını artırın: `adisyon-v1` → `adisyon-v2`. Bunu yapmazsanız telefonlar eski sürümü bir süre daha gösterebilir.
 3. Telefonlarda uygulamayı kapatıp açmak yeterlidir.
 
-## Yeni kullanıcı eklemek
+## Kullanıcılar ve roller
 
-1. Firebase → Authentication → Users → Add user.
-2. Firestore → Rules → e-postayı listeye ekleyin → Publish.
+- **Ana yönetici:** Firestore kurallarındaki `anaYoneticiler()` listesinde yazan e-postalar. Her zaman yöneticidir, uygulamadan kaldırılamaz. İlk girişte kendi kaydı otomatik oluşur.
+- **Yönetici:** Ayarlar'a girer, ürün/otel/fiyat ve kullanıcıları yönetir, fiş silebilir.
+- **Çalışan:** Sadece **Yeni fiş** ekranını görür. Fiş ekler; fişleri, özeti ve ayarları göremez, fiş düzenleyemez ve silemez.
+
+Yeni kullanıcı eklemek için yönetici hesabıyla **Ayarlar → Kullanıcılar → Yeni kullanıcı** bölümüne e-posta, şifre ve rol yazıp **Ekle**'ye basın. Firebase konsoluna girmeniz gerekmez.
+
+- **Kaldır** veya **Aktif** işaretini kaldırmak: kişi uygulamaya giremez, girdiği fişler silinmez.
+- **Şifre sıfırla:** kişinin e-postasına sıfırlama bağlantısı gider (e-posta gerçek olmalı).
+- Ana yöneticiyi listeye eklemek veya çıkarmak için Firebase → Firestore → Rules'taki listeyi düzenleyip Publish deyin.
 
 ## Sorun giderme
 
-| Sorun                                | Çözüm                                                                     |
-| ------------------------------------ | ------------------------------------------------------------------------- |
-| "Kurulum tamamlanmamış" yazıyor      | `firebase-config.js` doldurulmamış (Adım 5)                               |
-| Girişte "unauthorized-domain" hatası | Adım 7 yapılmamış                                                         |
-| "Bu hesabın yetkisi yok"             | E-posta Firestore kurallarındaki listede yok veya büyük harf var (Adım 4) |
-| GitHub adresi 404 veriyor            | `index.html` alt klasörde kalmış ya da Pages ayarı birkaç dakika bekliyor |
-| Değişiklik telefonda görünmüyor      | `sw.js` sürüm numarasını artırın, uygulamayı kapatıp açın                 |
-| Tutarlar 0 görünüyor                 | Ayarlar'dan ürün fiyatlarını girin                                        |
+| Sorun | Çözüm |
+|---|---|
+| "Kurulum tamamlanmamış" yazıyor | `firebase-config.js` doldurulmamış (Adım 5) |
+| Girişte "unauthorized-domain" hatası | Adım 7 yapılmamış |
+| "Bu hesabın yetkisi yok" | E-posta Firestore kurallarındaki listede yok veya büyük harf var (Adım 4) |
+| GitHub adresi 404 veriyor | `index.html` alt klasörde kalmış ya da Pages ayarı birkaç dakika bekliyor |
+| Değişiklik telefonda görünmüyor | `sw.js` sürüm numarasını artırın, uygulamayı kapatıp açın |
+| Tutarlar 0 görünüyor | Ayarlar'dan ürün fiyatlarını girin |
 
 ## Maliyet
 
