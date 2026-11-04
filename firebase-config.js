@@ -4,7 +4,7 @@
 // Not: Bu bilgiler gizli değildir, GitHub'da herkese açık durabilir.
 // Verilerinizi koruyan şey Firestore güvenlik kurallarıdır (firestore.rules).
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyAJsvI7FWO5aZaUxbh2L6tnSoQooNf9Q08",
   authDomain: "kahramanlar-adisyon.firebaseapp.com",
   databaseURL: "https://kahramanlar-adisyon-default-rtdb.europe-west1.firebasedatabase.app",
