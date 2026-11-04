@@ -664,7 +664,7 @@ function renderSettings() {
 
     <div class="card">
       <h3>Kullanıcılar</h3>
-      <p class="note" style="margin-top:-6px"><b>Yönetici</b>: Ayarlar'a girer, fiş siler, kullanıcı ekler. <b>Çalışan</b>: fiş girer ve düzenler, fişleri ve özeti görür.</p>
+      <p class="note" style="margin-top:-6px"><b>Yönetici</b>: Ayarlar'a girer, fiş siler, kullanıcı ekler. <b>Çalışan</b>: sadece yeni fiş ekler, başka ekran görmez.</p>
       ${S.users.map((u) => {
         const self = u.id === S.me;
         return `<div class="urow ${u.active === false ? 'inactive' : ''}" data-uid="${esc(u.id)}">
