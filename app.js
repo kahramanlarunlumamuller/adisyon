@@ -6,7 +6,7 @@ import {
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   collection, doc, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot, query, where, orderBy,
-  serverTimestamp, deleteField, writeBatch, getDoc, getDocFromServer
+  serverTimestamp, deleteField, writeBatch, getDoc, getDocFromServer, getDocs
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { firebaseConfig } from './firebase-config.js';
 
@@ -57,7 +57,7 @@ const S = {
   tab: 'new',
   products: [], hotels: [], settings: {}, receipts: [],
   month: todayStr().slice(0, 7), hotelFilter: '',
-  newHotel: '', newDate: todayStr(), newNo: '', qty: {}, editingId: null, editExtra: [],
+  newHotel: '', newDate: todayStr(), newNo: '', qty: {}, editingId: null, editExtra: [], editPrices: {}, editOrigHotel: '',
   openHotel: null,
   unsub: [], recUnsub: null, meUnsub: null, usersUnsub: null,
   me: '', role: null, users: [],
@@ -391,9 +391,15 @@ function resetForm() {
 function saveReceipt() {
   if (!S.newHotel) return toast('Otel seçin.', true);
   if (!S.newDate) return toast('Tarih seçin.', true);
+  // Birim fiyat fişin içine yazılır: sonradan fiyat değişse veya ürün silinse de bu fiş kendi fiyatıyla hesaplanır.
+  // Düzenlemede otel değişmediyse fişteki eski fiyat korunur.
+  const keepOld = S.editingId && S.newHotel === S.editOrigHotel;
   const items = S.products
     .filter((p) => (S.qty[p.id] || 0) > 0)
-    .map((p) => ({ productId: p.id, name: p.name, qty: S.qty[p.id] }));
+    .map((p) => {
+      const old = keepOld ? num(S.editPrices[p.id]) : 0;
+      return { productId: p.id, name: p.name, qty: S.qty[p.id], price: old > 0 ? old : priceFor(S.newHotel, p.id) };
+    });
   items.push(...S.editExtra);
   if (!items.length) return toast('En az bir ürün için adet girin.', true);
 
@@ -427,8 +433,9 @@ function editReceipt(id) {
   if (!isAdmin()) return;
   const r = S.receipts.find((x) => x.id === id); if (!r) return;
   S.editingId = id; S.newHotel = r.hotelId; S.newDate = r.date; S.newNo = r.no || '';
-  S.qty = {}; S.editExtra = [];
+  S.qty = {}; S.editExtra = []; S.editPrices = {}; S.editOrigHotel = r.hotelId;
   for (const it of r.items || []) {
+    if (num(it.price) > 0) S.editPrices[it.productId] = num(it.price);
     if (S.products.find((p) => p.id === it.productId)) S.qty[it.productId] = num(it.qty);
     else S.editExtra.push(it);
   }
@@ -479,23 +486,33 @@ function priceFor(hotelId, productId) {
   return num(S.products.find((x) => x.id === productId)?.price);
 }
 
+/* Fişe kaydedilmiş fiyat varsa o kullanılır; yoksa (eski fiş) bugünkü fiyat */
+function itemPrice(r, it) {
+  const saved = num(it.price);
+  return saved > 0 ? { price: saved, legacy: false } : { price: priceFor(r.hotelId, it.productId), legacy: true };
+}
+
 function computeSummary() {
   const rs = filtered();
   const map = new Map();
+  let legacy = false;
   for (const r of rs) {
     for (const it of r.items || []) {
-      const q = num(it.qty), pr = priceFor(r.hotelId, it.productId);
-      const e = map.get(it.productId) || { productId: it.productId, name: productName(it.productId, it.name), qty: 0, amount: 0, prices: new Set() };
-      e.qty += q; e.amount += q * pr; e.prices.add(pr);
-      map.set(it.productId, e);
+      const q = num(it.qty);
+      const ip = itemPrice(r, it);
+      if (ip.legacy) legacy = true;
+      const key = it.productId + '|' + ip.price; // aynı ürün farklı fiyattan satıldıysa ayrı satır
+      const e = map.get(key) || { productId: it.productId, name: productName(it.productId, it.name), qty: 0, amount: 0, unit: ip.price };
+      e.qty += q; e.amount += q * ip.price;
+      map.set(key, e);
     }
   }
   const idx = (id) => { const i = S.products.findIndex((p) => p.id === id); return i < 0 ? 999 : i; };
-  const rows = [...map.values()].sort((a, b) => idx(a.productId) - idx(b.productId));
-  rows.forEach((r) => (r.unit = r.prices.size === 1 ? [...r.prices][0] : null));
+  const rows = [...map.values()].sort((a, b) => idx(a.productId) - idx(b.productId) || a.unit - b.unit);
   return {
     receipts: rs,
     rows,
+    legacy,
     totalQty: rows.reduce((s, r) => s + r.qty, 0),
     total: round2(rows.reduce((s, r) => s + r.amount, 0))
   };
@@ -504,8 +521,8 @@ function computeSummary() {
 function renderSummary() {
   if (!isAdmin()) { $('#tab-summary').innerHTML = ''; return; }
   if (busy('#tab-summary')) return later('#tab-summary', renderSummary);
-  const { receipts, rows, totalQty: tq, total } = computeSummary();
-  const missingPrice = rows.some((r) => r.prices.has(0));
+  const { receipts, rows, totalQty: tq, total, legacy } = computeSummary();
+  const missingPrice = rows.some((r) => r.unit === 0);
   $('#tab-summary').innerHTML = `
     ${filtersHtml()}
     <div class="metrics">
@@ -517,11 +534,12 @@ function renderSummary() {
       ${rows.length ? `
       <table class="sum">
         <thead><tr><th>Ürün</th><th>Adet</th><th>Birim</th><th>Tutar</th></tr></thead>
-        <tbody>${rows.map((r) => `<tr><td>${esc(r.name)}</td><td>${fmtNum(r.qty)}</td><td>${r.unit === null ? '<span class="muted">karışık</span>' : tl(r.unit)}</td><td>${tl(r.amount)}</td></tr>`).join('')}</tbody>
+        <tbody>${rows.map((r) => `<tr><td>${esc(r.name)}</td><td>${fmtNum(r.qty)}</td><td>${tl(r.unit)}</td><td>${tl(r.amount)}</td></tr>`).join('')}</tbody>
         <tfoot><tr><td>Toplam</td><td>${fmtNum(tq)}</td><td></td><td>${tl(total)}</td></tr></tfoot>
       </table>
       ${missingPrice ? '<p class="note">Fiyatı girilmemiş ürünler var, tutarları 0 görünüyor. Ayarlar\'dan fiyat ekleyin.</p>' : ''}
-      ${!S.hotelFilter && rows.some((r) => r.unit === null) ? '<p class="note">"Karışık": oteller arasında fiyat farklı. Tutar her otelin kendi fiyatıyla hesaplandı.</p>' : ''}
+      ${legacy ? '<p class="note">Bazı eski fişlerde fiyat kayıtlı değil, onlar için bugünkü fiyat kullanıldı. Sabitlemek için: Ayarlar → Bakım → "Eski fişlerin fiyatlarını sabitle".</p>' : ''}
+      <p class="note">Her fiş, kaydedildiği andaki fiyatla hesaplanır. Aynı ürün ay içinde farklı fiyattan verildiyse ayrı satırlarda görünür.</p>
       ` : '<div class="empty">Bu dönem için kayıt yok.</div>'}
     </div>
     ${rows.length ? `<div class="btns">
@@ -546,18 +564,19 @@ function printSummary() {
   const { receipts, rows, totalQty: tq, total } = computeSummary();
   const { hotel, period } = periodTitle();
   const sorted = receipts.slice().sort((a, b) => (a.date + a.no).localeCompare(b.date + b.no));
+  const cols = rows.filter((r, i) => rows.findIndex((x) => x.productId === r.productId) === i); // her ürün bir sütun
   $('#print-area').innerHTML = `
     <h1>${esc(S.settings.businessName || 'Aylık Teslimat Özeti')}</h1>
     <p class="meta">Müşteri: <b>${esc(hotel)}</b> &nbsp;·&nbsp; Dönem: <b>${period}</b> &nbsp;·&nbsp; Fiş sayısı: <b>${receipts.length}</b></p>
     <table>
       <thead><tr><th>Ürün</th><th>Adet</th><th>Birim fiyat</th><th>Tutar</th></tr></thead>
-      <tbody>${rows.map((r) => `<tr><td>${esc(r.name)}</td><td>${fmtNum(r.qty)}</td><td>${r.unit === null ? 'karışık' : tl(r.unit)}</td><td>${tl(r.amount)}</td></tr>`).join('')}</tbody>
+      <tbody>${rows.map((r) => `<tr><td>${esc(r.name)}</td><td>${fmtNum(r.qty)}</td><td>${tl(r.unit)}</td><td>${tl(r.amount)}</td></tr>`).join('')}</tbody>
       <tfoot><tr><td>GENEL TOPLAM</td><td>${fmtNum(tq)}</td><td></td><td>${tl(total)}</td></tr></tfoot>
     </table>
     <h2>Fiş dökümü</h2>
     <table>
-      <thead><tr><th>Tarih</th><th>Fiş no</th>${!S.hotelFilter ? '<th>Otel</th>' : ''}${rows.map((r) => `<th>${esc(r.name)}</th>`).join('')}</tr></thead>
-      <tbody>${sorted.map((rc) => `<tr><td>${fmtDate(rc.date)}</td><td>${esc(rc.no || '—')}</td>${!S.hotelFilter ? `<td>${esc(hotelName(rc))}</td>` : ''}${rows.map((r) => {
+      <thead><tr><th>Tarih</th><th>Fiş no</th>${!S.hotelFilter ? '<th>Otel</th>' : ''}${cols.map((r) => `<th>${esc(r.name)}</th>`).join('')}</tr></thead>
+      <tbody>${sorted.map((rc) => `<tr><td>${fmtDate(rc.date)}</td><td>${esc(rc.no || '—')}</td>${!S.hotelFilter ? `<td>${esc(hotelName(rc))}</td>` : ''}${cols.map((r) => {
         const it = (rc.items || []).find((i) => i.productId === r.productId);
         return `<td>${it ? it.qty : ''}</td>`;
       }).join('')}</tr>`).join('')}</tbody>
@@ -588,14 +607,15 @@ async function exportExcel() {
     [S.settings.businessName || 'Aylık Teslimat Özeti'],
     ['Müşteri', hotel], ['Dönem', period], ['Fiş sayısı', receipts.length], [],
     ['Ürün', 'Adet', 'Birim fiyat', 'Tutar'],
-    ...rows.map((r) => [r.name, r.qty, r.unit === null ? 'karışık' : r.unit, round2(r.amount)]),
+    ...rows.map((r) => [r.name, r.qty, r.unit, round2(r.amount)]),
     [],
     ['GENEL TOPLAM', tq, '', total]
   ];
   const sorted = receipts.slice().sort((a, b) => (a.date + a.no).localeCompare(b.date + b.no));
+  const cols = rows.filter((r, i) => rows.findIndex((x) => x.productId === r.productId) === i); // her ürün bir sütun
   const detSheet = [
-    ['Tarih', 'Fiş no', 'Otel', ...rows.map((r) => r.name)],
-    ...sorted.map((rc) => [fmtDate(rc.date), rc.no || '', hotelName(rc), ...rows.map((r) => {
+    ['Tarih', 'Fiş no', 'Otel', ...cols.map((r) => r.name)],
+    ...sorted.map((rc) => [fmtDate(rc.date), rc.no || '', hotelName(rc), ...cols.map((r) => {
       const it = (rc.items || []).find((i) => i.productId === r.productId);
       return it ? num(it.qty) : '';
     })])
@@ -698,6 +718,12 @@ function renderSettings() {
         </div>
         <p class="err" id="nu-err"></p>
       </div>
+    </div>
+
+    <div class="card">
+      <h3>Bakım</h3>
+      <p class="note" style="margin:-6px 0 10px">Yeni fişler kaydedildiği andaki fiyatı saklar. Bu özellik eklenmeden önce girilmiş fişlerde fiyat kayıtlı değildir. Aşağıdaki düğme, o fişlere <b>bugünkü</b> fiyatları yazar; sonra fiyat değişse de değişmezler. Fiyatları değiştirmeden önce bir kez basın.</p>
+      <button data-act="fix-prices">Eski fişlerin fiyatlarını sabitle</button>
     </div>
 
     <div class="card">
@@ -811,7 +837,7 @@ $('#tab-settings').addEventListener('click', (e) => {
     batch.commit().catch(onErr);
   } else if (act === 'p-del') {
     const p = S.products.find((x) => x.id === pid);
-    if (confirm(`"${p?.name}" silinsin mi?\n\nGeçmiş fişlerde adı korunur. Silmek yerine "Aktif" işaretini kaldırmanız önerilir.`)) {
+    if (confirm(`"${p?.name}" silinsin mi?\n\nGeçmiş fişlerde adı ve fiyatı korunur. Silmek yerine "Aktif" işaretini kaldırmanız önerilir.`)) {
       deleteDoc(doc(db, 'products', pid)).catch(onErr);
     }
   } else if (act === 'h-add') {
@@ -830,6 +856,8 @@ $('#tab-settings').addEventListener('click', (e) => {
     }
   } else if (act === 'seed') {
     seedProducts();
+  } else if (act === 'fix-prices') {
+    fixOldPrices(b);
   } else if (act === 'u-add') {
     addUser(b);
   } else if (act === 'u-reset') {
@@ -849,6 +877,39 @@ $('#tab-settings').addEventListener('click', (e) => {
     if (confirm('Çıkış yapılsın mı?')) signOut(auth);
   }
 });
+
+/* Fiyatı kayıtlı olmayan eski fişlere bugünkü fiyatı yazar (bir kez çalıştırmak yeterli) */
+async function fixOldPrices(btn) {
+  if (!navigator.onLine) return toast('Bu işlem için internet gerekiyor.', true);
+  if (!confirm('Fiyatı kayıtlı olmayan tüm eski fişlere bugünkü fiyatlar yazılsın mı?\n\nFiyatı zaten kayıtlı fişler değişmez.')) return;
+  btn.disabled = true; btn.textContent = 'Sabitleniyor…';
+  try {
+    const snap = await getDocs(collection(db, 'receipts'));
+    let batch = writeBatch(db), inBatch = 0, fixed = 0, zero = 0;
+    for (const d of snap.docs) {
+      const r = { id: d.id, ...d.data() };
+      let changed = false;
+      const items = (r.items || []).map((it) => {
+        if (num(it.price) > 0) return it;
+        const pr = priceFor(r.hotelId, it.productId);
+        if (pr > 0) { changed = true; return { ...it, price: pr }; }
+        zero++;
+        return it;
+      });
+      if (changed) {
+        batch.update(d.ref, { items });
+        fixed++; inBatch++;
+        if (inBatch >= 400) { await batch.commit(); batch = writeBatch(db); inBatch = 0; }
+      }
+    }
+    if (inBatch) await batch.commit();
+    toast(fixed ? `${fixed} fişin fiyatları sabitlendi.` + (zero ? ` ${zero} kalemin fiyatı bulunamadı (ürün silinmiş veya fiyatsız).` : '')
+      : 'Fiyatı eksik fiş yok, her şey güncel.', zero > 0);
+  } catch (e) {
+    onErr(e);
+  }
+  btn.disabled = false; btn.textContent = 'Eski fişlerin fiyatlarını sabitle';
+}
 
 function seedProducts() {
   const batch = writeBatch(db);
